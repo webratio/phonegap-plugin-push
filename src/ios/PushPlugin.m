@@ -116,6 +116,16 @@
     }];
 }
 
+- (void)hasColdStartNotification:(CDVInvokedUrlCommand*)command;
+{
+    self.callbackId = command.callbackId;
+    if(self.notificationMessage){
+       [self successWithMessage:@"true"];
+    } else {
+       [self successWithMessage:@"false"];
+    }    
+}
+
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
     NSLog(@"Push Plugin register success: %@", deviceToken);
     

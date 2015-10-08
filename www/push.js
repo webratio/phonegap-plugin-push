@@ -63,6 +63,14 @@ var PushNotification = function(options) {
 };
 
 /**
+ * Call this check whether there is a cold-start notification pending
+ */
+
+PushNotification.hasColdStartNotification = function(successCallback, errorCallback) {
+    exec(successCallback, errorCallback, "PushNotification", "hasColdStartNotification", []);
+};
+
+/**
  * Unregister from push notifications
  */
 
@@ -164,6 +172,10 @@ module.exports = {
 
     init: function(options) {
         return new PushNotification(options);
+    },
+    
+    hasColdStartNotification: function(successCallback, errorCallbacl){
+        return PushNotification.hasColdStartNotification(successCallback, errorCallbacl);
     },
 
     /**
