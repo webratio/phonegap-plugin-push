@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Account Manager plug-in" default="main">
+	
+	<property name="zip" value="${cordovaPluginOutputDir}/com.webratio.phonegap-plugin-push.zip" />
+	
+	<target name="main">
+		<fail unless="cordovaPluginOutputDir" message="Please provide the cordovaPluginOutputDir property"/>
+		<delete file="${zip}" />
+
+		<zip destfile="${zip}">
+			<fileset dir=".">
+				<include name="src/**" />
+				<include name="webratio/**" />
+				<include name="www/**" />
+				<include name="plugin.xml" />
+				<exclude name="CVS" />
+			</fileset>
+		</zip>
+
+	</target>
+
+</project>
+
