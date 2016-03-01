@@ -1,7 +1,6 @@
 package com.adobe.phonegap.push;
 
 public interface PushConstants {
-    
     public static final String HAS_COLD_START_NOTIFICATION = "hasColdStartNotification";
     public static final String COM_ADOBE_PHONEGAP_PUSH = "com.adobe.phonegap.push";
     public static final String REGISTRATION_ID = "registrationId";

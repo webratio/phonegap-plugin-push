@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="Account Manager plug-in" default="main">
+<project name="Push Notifications plug-in" default="main">
 	
 	<property name="zip" value="${basedir}/../webratio-tool/com.webratio.generator.mobile/BuiltinComponents/NativePlugins/com.webratio.phonegap-plugin-push.zip" />
 	

@@ -40,6 +40,7 @@ public class PushPlugin extends CordovaPlugin implements PushConstants {
     public boolean execute(final String action, final JSONArray data, final CallbackContext callbackContext) {
         Log.v(LOG_TAG, "execute: action=" + action);
         gWebView = this.webView;
+        
         if (HAS_COLD_START_NOTIFICATION.equals(action)) {
             Log.v(LOG_TAG, "checking coldstart notification presence (" + gCachedExtras + ")");
             callbackContext.success((gCachedExtras != null) ? "true" : "false");
