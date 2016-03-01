@@ -31,7 +31,6 @@ var PushNotification = function(options) {
     // triggered on registration and notification
     var that = this;
     var success = function(result) {
-        console.log("##### " + JSON.stringify(result))
         if (result && typeof result.registrationId !== 'undefined') {
             that.emit('registration', result);
         } else if (result && typeof result.callback !== 'undefined') {
@@ -44,7 +43,6 @@ var PushNotification = function(options) {
                 }
                 return context[func].apply(context, args);
             }
-            
             executeFunctionByName(result.callback, window, result);
         } else if (result) {
             that.emit('notification', result);
