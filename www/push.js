@@ -75,7 +75,7 @@ PushNotification.hasColdStartNotification = function(successCallback, errorCallb
  * Unregister from push notifications
  */
 
-PushNotification.prototype.unregister = function(successCallback, errorCallback, options) {
+PushNotification.prototype.unregister = function(successCallback, errorCallback) {
     if (errorCallback == null) { errorCallback = function() {}}
 
     if (typeof errorCallback != "function")  {
@@ -88,7 +88,7 @@ PushNotification.prototype.unregister = function(successCallback, errorCallback,
         return
     }
 
-    exec(successCallback, errorCallback, "PushNotification", "unregister", [options]);
+    exec(successCallback, errorCallback, "PushNotification", "unregister", []);
 };
 
 /**
