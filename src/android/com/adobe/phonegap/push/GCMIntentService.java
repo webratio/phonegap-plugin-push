@@ -216,7 +216,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         }
     }
     
-    private void showNotificationIfPossible (Context context, Bundle extras) {
+    private void showNotificationIfPossible(Context context, Bundle extras) {
 
         // Send a notification if there is a message or title, otherwise just send data
         String message = this.getMessageText(extras);
@@ -270,38 +270,38 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
 
         /*
          * Notification Icon Color
-         *
+         * 
          * Sets the small-icon background color of the notification.
          * To use, add the `iconColor` key to plugin android options
-         *
+         * 
          */
-        setNotificationIconColor(getString(extras,"color"), mBuilder, localIconColor);
+        setNotificationIconColor(getString(extras, "color"), mBuilder, localIconColor);
 
         /*
          * Notification Icon
-         *
+         * 
          * Sets the small-icon of the notification.
-         *
+         * 
          * - checks the plugin options for `icon` key
          * - if none, uses the application icon
-         *
+         * 
          * The icon value must be a string that maps to a drawable resource.
          * If no resource is found, falls
-         *
+         * 
          */
         setNotificationSmallIcon(context, extras, packageName, resources, mBuilder, localIcon);
 
         /*
          * Notification Large-Icon
-         *
+         * 
          * Sets the large-icon of the notification
-         *
+         * 
          * - checks the gcm data for the `image` key
          * - checks to see if remote image, loads it.
          * - checks to see if assets image, Loads It.
          * - checks to see if resource image, LOADS IT!
          * - if none, we don't set the large icon
-         *
+         * 
          */
         setNotificationLargeIcon(extras, packageName, resources, mBuilder);
 
