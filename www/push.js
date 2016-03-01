@@ -66,7 +66,11 @@ var PushNotification = function(options) {
  */
 
 PushNotification.hasColdStartNotification = function(successCallback, errorCallback) {
-    exec(successCallback, errorCallback, "PushNotification", "hasColdStartNotification", []);
+    exec(function(result) {
+        successCallback && successCallback(result === true || result === "true");
+    }, function(msg) {
+        errorCallback && errorCallback(new Error(msg));
+    }, "PushNotification", "hasColdStartNotification", []);
 };
 
 /**
