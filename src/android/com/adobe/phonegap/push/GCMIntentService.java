@@ -10,14 +10,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
+//import org.apache.http.HttpResponse;
+//import org.apache.http.client.HttpClient;
+//import org.apache.http.client.methods.HttpPost;
+//import org.apache.http.entity.StringEntity;
+//import org.apache.http.impl.client.DefaultHttpClient;
+//import org.apache.http.params.HttpConnectionParams;
+//import org.apache.http.params.HttpParams;
+//import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -72,7 +72,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
     @Override
     public void onRegistered(Context context, String regId) {
         Log.v(TAG, "onRegistered: " + regId);
-        if (PushPlugin.isActive()) {
+        //TODO if (PushPlugin.isActive()) {
             try {
                 JSONObject json = new JSONObject().put(REGISTRATION_ID, regId);
                 Log.v(TAG, "onRegistered: " + json.toString());
@@ -81,104 +81,106 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
                 // No message to the user is sent, JSON failed
                 Log.e(TAG, "onRegistered: JSON exception");
             }
-        } else {
-            try {
-                String baseUrl = getBackendUrl(context);
-                String packageId = getAccountManagerPackageId(context);
-                Log.d(TAG, "Backend baseUrl=" + baseUrl);
-                Log.d(TAG, "AccountManager packageId=" + packageId);
-                if (baseUrl == null || packageId == null) {
-                    Log.d(TAG, "Unable to perform backend login due to missing backend URL");
-                    return;
-                }
-
-                /* retrieves current username and password */
-                Log.d(TAG, "Retrieving login info");
-                Context pkgContext = context.getApplicationContext().createPackageContext(packageId, 0);
-                SharedPreferences settings = pkgContext.getSharedPreferences("LoginPrefs", 0);
-                if (settings == null) {
-                    Log.d(TAG, "Unable to perform backend login due to missing login preferences");
-                    return;
-                }
-                String username = settings.getString("__USERNAME__", null);
-                String password = settings.getString("__PASSWORD__", null);
-                if (username == null || password == null) {
-                    Log.d(TAG, "Unable to perform backend login due to missing username or password");
-                    return;
-                }
-                String deviceId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
-                BackendLoginRunnable runnable = new BackendLoginRunnable(username, password, baseUrl, regId, deviceId);
-                new Thread(runnable).start();
-            } catch (Exception e) {
-                Log.e(TAG, "An error corred performing silent login", e);
-            }
-        }
+// TODO             
+//        } else {
+//            try {
+//                String baseUrl = getBackendUrl(context);
+//                String packageId = getAccountManagerPackageId(context);
+//                Log.d(TAG, "Backend baseUrl=" + baseUrl);
+//                Log.d(TAG, "AccountManager packageId=" + packageId);
+//                if (baseUrl == null || packageId == null) {
+//                    Log.d(TAG, "Unable to perform backend login due to missing backend URL");
+//                    return;
+//                }
+//
+//                /* retrieves current username and password */
+//                Log.d(TAG, "Retrieving login info");
+//                Context pkgContext = context.getApplicationContext().createPackageContext(packageId, 0);
+//                SharedPreferences settings = pkgContext.getSharedPreferences("LoginPrefs", 0);
+//                if (settings == null) {
+//                    Log.d(TAG, "Unable to perform backend login due to missing login preferences");
+//                    return;
+//                }
+//                String username = settings.getString("__USERNAME__", null);
+//                String password = settings.getString("__PASSWORD__", null);
+//                if (username == null || password == null) {
+//                    Log.d(TAG, "Unable to perform backend login due to missing username or password");
+//                    return;
+//                }
+//                String deviceId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+//                BackendLoginRunnable runnable = new BackendLoginRunnable(username, password, baseUrl, regId, deviceId);
+//                new Thread(runnable).start();
+//            } catch (Exception e) {
+//                Log.e(TAG, "An error corred performing silent login", e);
+//            }
+//        }
     }
 
-    private static class BackendLoginRunnable implements Runnable {
-
-        private static final int MAX_RETRY = 10;
-
-        private final String username;
-        private final String password;
-        private final String baseUrl;
-        private final String registrationId;
-        private final String deviceId;
-
-        BackendLoginRunnable(String username, String password, String baseUrl, String registrationId, String deviceId) {
-            super();
-            this.username = username;
-            this.password = password;
-            this.baseUrl = baseUrl;
-            this.registrationId = registrationId;
-            this.deviceId = deviceId;
-        }
-
-        @Override
-        public void run() {
-            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
-            // Retries many time with increasing time lapse in order to grant backend availability.
-            // The backend could be accessible only through the WIFI which can takes several time to be available, respect on the GSM
-            // network which is ready on startup and which allows the GCM registration but not the backend access.
-            for (int i = 1; i <= MAX_RETRY; i++) {
-                try {
-                    Log.d(TAG, "Performing backend login for '" + username + "' (retry " + i + ")");
-                    HttpClient httpClient = new DefaultHttpClient();
-                    HttpParams params = httpClient.getParams();
-                    HttpConnectionParams.setConnectionTimeout(params, 4000);
-                    HttpConnectionParams.setSoTimeout(params, 4000);
-                    HttpPost request = new HttpPost(baseUrl + "/users/login");
-                    request.addHeader("Accept", "application/json");
-                    request.addHeader("content-type", "application/json");
-                    JSONObject requestJson = new JSONObject();
-                    requestJson.put("username", username);
-                    requestJson.put("password", password);
-                    JSONObject device = new JSONObject();
-                    device.put("deviceId", deviceId);
-                    device.put("devicePlatform", "Android");
-                    device.put("notificationDeviceId", registrationId);
-                    requestJson.put("device", device);
-                    request.setEntity(new StringEntity(requestJson.toString()));
-                    HttpResponse response = httpClient.execute(request);
-                    if (200 == response.getStatusLine().getStatusCode()) {
-                        return;
-                    }
-                    String msg = "Unable to perform backend login " + response.getStatusLine();
-                    if (response.getEntity() != null) {
-                        msg += "\n" + EntityUtils.toString(response.getEntity());
-                    }
-                    Log.e(TAG, msg);
-                } catch (Throwable t) {
-                    // ignores exceptions
-                }
-                try {
-                    Thread.sleep(i * 2000L);
-                } catch (Throwable t2) {
-                    // ignores exceptions
-                }
-            }
-        }
-    }
+// TODO
+//    private static class BackendLoginRunnable implements Runnable {
+//
+//        private static final int MAX_RETRY = 10;
+//
+//        private final String username;
+//        private final String password;
+//        private final String baseUrl;
+//        private final String registrationId;
+//        private final String deviceId;
+//
+//        BackendLoginRunnable(String username, String password, String baseUrl, String registrationId, String deviceId) {
+//            super();
+//            this.username = username;
+//            this.password = password;
+//            this.baseUrl = baseUrl;
+//            this.registrationId = registrationId;
+//            this.deviceId = deviceId;
+//        }
+//
+//        @Override
+//        public void run() {
+//            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
+//            // Retries many time with increasing time lapse in order to grant backend availability.
+//            // The backend could be accessible only through the WIFI which can takes several time to be available, respect on the GSM
+//            // network which is ready on startup and which allows the GCM registration but not the backend access.
+//            for (int i = 1; i <= MAX_RETRY; i++) {
+//                try {
+//                    Log.d(TAG, "Performing backend login for '" + username + "' (retry " + i + ")");
+//                    HttpClient httpClient = new DefaultHttpClient();
+//                    HttpParams params = httpClient.getParams();
+//                    HttpConnectionParams.setConnectionTimeout(params, 4000);
+//                    HttpConnectionParams.setSoTimeout(params, 4000);
+//                    HttpPost request = new HttpPost(baseUrl + "/users/login");
+//                    request.addHeader("Accept", "application/json");
+//                    request.addHeader("content-type", "application/json");
+//                    JSONObject requestJson = new JSONObject();
+//                    requestJson.put("username", username);
+//                    requestJson.put("password", password);
+//                    JSONObject device = new JSONObject();
+//                    device.put("deviceId", deviceId);
+//                    device.put("devicePlatform", "Android");
+//                    device.put("notificationDeviceId", registrationId);
+//                    requestJson.put("device", device);
+//                    request.setEntity(new StringEntity(requestJson.toString()));
+//                    HttpResponse response = httpClient.execute(request);
+//                    if (200 == response.getStatusLine().getStatusCode()) {
+//                        return;
+//                    }
+//                    String msg = "Unable to perform backend login " + response.getStatusLine();
+//                    if (response.getEntity() != null) {
+//                        msg += "\n" + EntityUtils.toString(response.getEntity());
+//                    }
+//                    Log.e(TAG, msg);
+//                } catch (Throwable t) {
+//                    // ignores exceptions
+//                }
+//                try {
+//                    Thread.sleep(i * 2000L);
+//                } catch (Throwable t2) {
+//                    // ignores exceptions
+//                }
+//            }
+//        }
+//    }
 
     @Override
     public void onUnregistered(Context context, String regId) {
