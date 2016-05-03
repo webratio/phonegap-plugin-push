@@ -31,6 +31,7 @@ var PushNotification = function(options) {
     // triggered on registration and notification
     var that = this;
     var success = function(result) {
+        console.log("##### " + JSON.stringify(result))
         if (result && typeof result.registrationId !== 'undefined') {
             that.emit('registration', result);
         } else if (result && typeof result.callback !== 'undefined') {
