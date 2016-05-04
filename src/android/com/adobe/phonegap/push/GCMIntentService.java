@@ -4,20 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
-
-//import org.apache.http.HttpResponse;
-//import org.apache.http.client.HttpClient;
-//import org.apache.http.client.methods.HttpPost;
-//import org.apache.http.entity.StringEntity;
-//import org.apache.http.impl.client.DefaultHttpClient;
-//import org.apache.http.params.HttpConnectionParams;
-//import org.apache.http.params.HttpParams;
-//import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,16 +43,16 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
     private static final String LOG_TAG = "PushPlugin_GCMIntentService";
     private static HashMap<Integer, ArrayList<String>> messageMap = new HashMap<Integer, ArrayList<String>>();
 
-    public void setNotification(int notId, String message){
+    public void setNotification(int notId, String message) {
         ArrayList<String> messageList = messageMap.get(notId);
-        if(messageList == null) {
+        if (messageList == null) {
             messageList = new ArrayList<String>();
             messageMap.put(notId, messageList);
         }
 
-        if(message.isEmpty()){
+        if (message.isEmpty()) {
             messageList.clear();
-        }else{
+        } else {
             messageList.add(message);
         }
     }
@@ -72,7 +64,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
     @Override
     public void onRegistered(Context context, String regId) {
         Log.v(TAG, "onRegistered: " + regId);
-        //TODO if (PushPlugin.isActive()) {
+        if (PushPlugin.isActive()) {
             try {
                 JSONObject json = new JSONObject().put(REGISTRATION_ID, regId);
                 Log.v(TAG, "onRegistered: " + json.toString());
@@ -81,106 +73,140 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
                 // No message to the user is sent, JSON failed
                 Log.e(TAG, "onRegistered: JSON exception");
             }
-// TODO             
-//        } else {
-//            try {
-//                String baseUrl = getBackendUrl(context);
-//                String packageId = getAccountManagerPackageId(context);
-//                Log.d(TAG, "Backend baseUrl=" + baseUrl);
-//                Log.d(TAG, "AccountManager packageId=" + packageId);
-//                if (baseUrl == null || packageId == null) {
-//                    Log.d(TAG, "Unable to perform backend login due to missing backend URL");
-//                    return;
-//                }
-//
-//                /* retrieves current username and password */
-//                Log.d(TAG, "Retrieving login info");
-//                Context pkgContext = context.getApplicationContext().createPackageContext(packageId, 0);
-//                SharedPreferences settings = pkgContext.getSharedPreferences("LoginPrefs", 0);
-//                if (settings == null) {
-//                    Log.d(TAG, "Unable to perform backend login due to missing login preferences");
-//                    return;
-//                }
-//                String username = settings.getString("__USERNAME__", null);
-//                String password = settings.getString("__PASSWORD__", null);
-//                if (username == null || password == null) {
-//                    Log.d(TAG, "Unable to perform backend login due to missing username or password");
-//                    return;
-//                }
-//                String deviceId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
-//                BackendLoginRunnable runnable = new BackendLoginRunnable(username, password, baseUrl, regId, deviceId);
-//                new Thread(runnable).start();
-//            } catch (Exception e) {
-//                Log.e(TAG, "An error corred performing silent login", e);
-//            }
-//        }
+        } else {
+            try {
+                String baseUrl = getBackendUrl(context);
+                String packageId = getAccountManagerPackageId(context);
+                Log.d(TAG, "Backend baseUrl=" + baseUrl);
+                Log.d(TAG, "AccountManager packageId=" + packageId);
+                if (baseUrl == null || packageId == null) {
+                    Log.d(TAG, "Unable to perform backend login due to missing backend URL");
+                    return;
+                }
+
+                /* retrieves current username and password */
+                Log.d(TAG, "Retrieving login info");
+                Context pkgContext = context.getApplicationContext().createPackageContext(packageId, 0);
+                SharedPreferences settings = pkgContext.getSharedPreferences("LoginPrefs", 0);
+                if (settings == null) {
+                    Log.d(TAG, "Unable to perform backend login due to missing login preferences");
+                    return;
+                }
+                String username = settings.getString("__USERNAME__", null);
+                String password = settings.getString("__PASSWORD__", null);
+                if (username == null || password == null) {
+                    Log.d(TAG, "Unable to perform backend login due to missing username or password");
+                    return;
+                }
+                String deviceId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+                BackendLoginRunnable runnable = new BackendLoginRunnable(username, password, baseUrl, regId, deviceId);
+                new Thread(runnable).start();
+            } catch (Exception e) {
+                Log.e(TAG, "An error corred performing silent login", e);
+            }
+        }
     }
 
-// TODO
-//    private static class BackendLoginRunnable implements Runnable {
-//
-//        private static final int MAX_RETRY = 10;
-//
-//        private final String username;
-//        private final String password;
-//        private final String baseUrl;
-//        private final String registrationId;
-//        private final String deviceId;
-//
-//        BackendLoginRunnable(String username, String password, String baseUrl, String registrationId, String deviceId) {
-//            super();
-//            this.username = username;
-//            this.password = password;
-//            this.baseUrl = baseUrl;
-//            this.registrationId = registrationId;
-//            this.deviceId = deviceId;
-//        }
-//
-//        @Override
-//        public void run() {
-//            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
-//            // Retries many time with increasing time lapse in order to grant backend availability.
-//            // The backend could be accessible only through the WIFI which can takes several time to be available, respect on the GSM
-//            // network which is ready on startup and which allows the GCM registration but not the backend access.
-//            for (int i = 1; i <= MAX_RETRY; i++) {
-//                try {
-//                    Log.d(TAG, "Performing backend login for '" + username + "' (retry " + i + ")");
-//                    HttpClient httpClient = new DefaultHttpClient();
-//                    HttpParams params = httpClient.getParams();
-//                    HttpConnectionParams.setConnectionTimeout(params, 4000);
-//                    HttpConnectionParams.setSoTimeout(params, 4000);
-//                    HttpPost request = new HttpPost(baseUrl + "/users/login");
-//                    request.addHeader("Accept", "application/json");
-//                    request.addHeader("content-type", "application/json");
-//                    JSONObject requestJson = new JSONObject();
-//                    requestJson.put("username", username);
-//                    requestJson.put("password", password);
-//                    JSONObject device = new JSONObject();
-//                    device.put("deviceId", deviceId);
-//                    device.put("devicePlatform", "Android");
-//                    device.put("notificationDeviceId", registrationId);
-//                    requestJson.put("device", device);
-//                    request.setEntity(new StringEntity(requestJson.toString()));
-//                    HttpResponse response = httpClient.execute(request);
-//                    if (200 == response.getStatusLine().getStatusCode()) {
-//                        return;
-//                    }
-//                    String msg = "Unable to perform backend login " + response.getStatusLine();
-//                    if (response.getEntity() != null) {
-//                        msg += "\n" + EntityUtils.toString(response.getEntity());
-//                    }
-//                    Log.e(TAG, msg);
-//                } catch (Throwable t) {
-//                    // ignores exceptions
-//                }
-//                try {
-//                    Thread.sleep(i * 2000L);
-//                } catch (Throwable t2) {
-//                    // ignores exceptions
-//                }
-//            }
-//        }
-//    }
+    private static class BackendLoginRunnable implements Runnable {
+
+        private static final int MAX_RETRY = 10;
+
+        private final String username;
+        private final String password;
+        private final String baseUrl;
+        private final String registrationId;
+        private final String deviceId;
+
+        BackendLoginRunnable(String username, String password, String baseUrl, String registrationId, String deviceId) {
+            super();
+            this.username = username;
+            this.password = password;
+            this.baseUrl = baseUrl;
+            this.registrationId = registrationId;
+            this.deviceId = deviceId;
+        }
+
+        @Override
+        public void run() {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
+            // Retries many time with increasing time lapse in order to grant backend availability.
+            // The backend could be accessible only through the WIFI which can takes several time to be available, respect on the GSM
+            // network which is ready on startup and which allows the GCM registration but not the backend access.
+
+            /* prepares the login request body */
+            JSONObject requestJson = null;
+            try {
+                requestJson = new JSONObject();
+                requestJson.put("username", username);
+                requestJson.put("password", password);
+                JSONObject device = new JSONObject();
+                device.put("deviceId", deviceId);
+                device.put("devicePlatform", "Android");
+                device.put("notificationDeviceId", registrationId);
+                requestJson.put("device", device);
+            } catch (Throwable t) {
+                Log.e(TAG, "Unable to prepare the login request", t);
+                return;
+            }
+
+            /* performs the login (retrying it if necessary) */
+            for (int i = 1; i <= MAX_RETRY; i++) {
+                try {
+                    Log.d(TAG, "Performing backend login for '" + username + "' (retry " + i + ")");
+                    OutputStreamWriter requestWriter = null;
+                    BufferedReader responseReader = null;
+                    try {
+                        URL url = new URL(baseUrl + "/users/login");
+                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                        conn.setConnectTimeout(4000);
+                        conn.setReadTimeout(4000);
+                        conn.setDoOutput(true);
+                        conn.setDoInput(true);
+                        conn.setRequestProperty("Accept", "application/json");
+                        conn.setRequestProperty("content-type", "application/json");
+                        requestWriter = new OutputStreamWriter(conn.getOutputStream());
+                        requestWriter.write(requestJson.toString());
+                        requestWriter.flush();
+                        final int code = conn.getResponseCode();
+                        if (200 == code) {
+                            return;
+                        }
+
+                        /* reads the response */
+                        responseReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = responseReader.readLine()) != null) {
+                            response.append("\n").append(line);
+                        }
+                        Log.e(TAG, "Unable to perform backend login (resultCode:" + code + ")" + response.toString());
+                    } finally {
+                        if (requestWriter != null) {
+                            try {
+                                requestWriter.close();
+                            } catch (Throwable t) {
+                                // ignores exceptions
+                            }
+                        }
+                        if (responseReader != null) {
+                            try {
+                                responseReader.close();
+                            } catch (Throwable t) {
+                                // ignores exceptions
+                            }
+                        }
+                    }
+                } catch (Throwable t) {
+                    // ignores exceptions
+                }
+                try {
+                    Thread.sleep(i * 2000L);
+                } catch (Throwable t2) {
+                    // ignores exceptions
+                }
+            }
+        }
+    }
 
     @Override
     public void onUnregistered(Context context, String regId) {
@@ -203,10 +229,11 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
                 extras.putBoolean(FOREGROUND, true);
                 PushPlugin.sendExtras(extras);
             }
-            // if we are in the foreground and forceShow is `true`, force show the notification if the data has at least a message or title
+            // if we are in the foreground and forceShow is `true`, force show the notification if the data has at least a message or
+            // title
             else if (forceShow && PushPlugin.isInForeground()) {
                 extras.putBoolean(FOREGROUND, true);
-                
+
                 showNotificationIfPossible(context, extras);
             }
             // if we are not in the foreground always send notification if the data has at least a message or title
@@ -217,14 +244,13 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
             }
         }
     }
-    
+
     private void showNotificationIfPossible(Context context, Bundle extras) {
 
         // Send a notification if there is a message or title, otherwise just send data
         String message = this.getMessageText(extras);
         String title = getString(extras, TITLE, "");
-        if ((message != null && message.length() != 0) ||
-                (title != null && title.length() != 0)) {
+        if ((message != null && message.length() != 0) || (title != null && title.length() != 0)) {
             createNotification(context, extras);
         } else {
             PushPlugin.sendExtras(extras);
@@ -244,15 +270,12 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         notificationIntent.putExtra(NOT_ID, notId);
 
         int requestCode = new Random().nextInt();
-        PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, requestCode, notificationIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context)
-                        .setWhen(System.currentTimeMillis())
-                        .setContentTitle(getString(extras, TITLE))
-                        .setTicker(getString(extras, TITLE))
-                        .setContentIntent(contentIntent)
-                        .setAutoCancel(true);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context).setWhen(System.currentTimeMillis())
+                .setContentTitle(getString(extras, TITLE)).setTicker(getString(extras, TITLE)).setContentIntent(contentIntent)
+                .setAutoCancel(true);
 
         SharedPreferences prefs = context.getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH, Context.MODE_PRIVATE);
         String localIcon = prefs.getString(ICON, null);
@@ -273,9 +296,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         /*
          * Notification Icon Color
          * 
-         * Sets the small-icon background color of the notification.
-         * To use, add the `iconColor` key to plugin android options
-         * 
+         * Sets the small-icon background color of the notification. To use, add the `iconColor` key to plugin android options
          */
         setNotificationIconColor(getString(extras, "color"), mBuilder, localIconColor);
 
@@ -284,12 +305,9 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
          * 
          * Sets the small-icon of the notification.
          * 
-         * - checks the plugin options for `icon` key
-         * - if none, uses the application icon
+         * - checks the plugin options for `icon` key - if none, uses the application icon
          * 
-         * The icon value must be a string that maps to a drawable resource.
-         * If no resource is found, falls
-         * 
+         * The icon value must be a string that maps to a drawable resource. If no resource is found, falls
          */
         setNotificationSmallIcon(context, extras, packageName, resources, mBuilder, localIcon);
 
@@ -298,12 +316,8 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
          * 
          * Sets the large-icon of the notification
          * 
-         * - checks the gcm data for the `image` key
-         * - checks to see if remote image, loads it.
-         * - checks to see if assets image, Loads It.
-         * - checks to see if resource image, LOADS IT!
-         * - if none, we don't set the large icon
-         * 
+         * - checks the gcm data for the `image` key - checks to see if remote image, loads it. - checks to see if assets image, Loads
+         * It. - checks to see if resource image, LOADS IT! - if none, we don't set the large icon
          */
         setNotificationLargeIcon(extras, packageName, resources, mBuilder);
 
@@ -315,12 +329,12 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         }
 
         /*
-         *  LED Notification
+         * LED Notification
          */
         setNotificationLedColor(extras, mBuilder);
 
         /*
-         *  Priority Notification
+         * Priority Notification
          */
         setNotificationPriority(extras, mBuilder);
 
@@ -348,7 +362,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         if (actions != null) {
             try {
                 JSONArray actionsArray = new JSONArray(actions);
-                for (int i=0; i < actionsArray.length(); i++) {
+                for (int i = 0; i < actionsArray.length(); i++) {
                     Log.d(LOG_TAG, "adding action");
                     JSONObject action = actionsArray.getJSONObject(i);
                     Log.d(LOG_TAG, "adding callback = " + action.getString(CALLBACK));
@@ -360,7 +374,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
                     mBuilder.addAction(resources.getIdentifier(action.getString(ICON), DRAWABLE, packageName),
                             action.getString(TITLE), pIntent);
                 }
-            } catch(JSONException e) {
+            } catch (JSONException e) {
                 // nope
             }
         }
@@ -384,7 +398,8 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
             for (int i = 0; i < items.length; i++) {
                 try {
                     results[i] = Long.parseLong(items[i]);
-                } catch (NumberFormatException nfe) {}
+                } catch (NumberFormatException nfe) {
+                }
             }
             mBuilder.setVibrate(results);
         } else {
@@ -398,7 +413,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         String message = getMessageText(extras);
 
         String style = getString(extras, STYLE, STYLE_TEXT);
-        if(STYLE_INBOX.equals(style)) {
+        if (STYLE_INBOX.equals(style)) {
             setNotification(notId, message);
 
             mBuilder.setContentText(message);
@@ -412,9 +427,8 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
                     stacking = getString(extras, SUMMARY_TEXT);
                     stacking = stacking.replace("%n%", sizeListMessage);
                 }
-                NotificationCompat.InboxStyle notificationInbox = new NotificationCompat.InboxStyle()
-                        .setBigContentTitle(getString(extras, TITLE))
-                        .setSummaryText(stacking);
+                NotificationCompat.InboxStyle notificationInbox = new NotificationCompat.InboxStyle().setBigContentTitle(
+                        getString(extras, TITLE)).setSummaryText(stacking);
 
                 for (int i = messageList.size() - 1; i >= 0; i--) {
                     notificationInbox.addLine(Html.fromHtml(messageList.get(i)));
@@ -460,25 +474,23 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
                 mBuilder.setStyle(bigText);
             }
             /*
-            else {
-                mBuilder.setContentText("<missing message content>");
-            }
-            */
+             * else { mBuilder.setContentText("<missing message content>"); }
+             */
         }
     }
 
-    private String getString(Bundle extras,String key) {
+    private String getString(Bundle extras, String key) {
         String message = extras.getString(key);
         if (message == null) {
-            message = extras.getString(GCM_NOTIFICATION+"."+key);
+            message = extras.getString(GCM_NOTIFICATION + "." + key);
         }
         return message;
     }
 
-    private String getString(Bundle extras,String key, String defaultString) {
+    private String getString(Bundle extras, String key, String defaultString) {
         String message = extras.getString(key);
         if (message == null) {
-            message = extras.getString(GCM_NOTIFICATION+"."+key, defaultString);
+            message = extras.getString(GCM_NOTIFICATION + "." + key, defaultString);
         }
         return message;
     }
@@ -497,8 +509,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
             soundname = getString(extras, SOUND);
         }
         if (soundname != null) {
-            Uri sound = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE
-                    + "://" + context.getPackageName() + "/raw/" + soundname);
+            Uri sound = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + context.getPackageName() + "/raw/" + soundname);
             Log.d(LOG_TAG, sound.toString());
             mBuilder.setSound(sound);
         } else {
@@ -515,7 +526,8 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
             for (int i = 0; i < items.length; i++) {
                 try {
                     results[i] = Integer.parseInt(items[i]);
-                } catch (NumberFormatException nfe) {}
+                } catch (NumberFormatException nfe) {
+                }
             }
             if (results.length == 4) {
                 mBuilder.setLights(Color.argb(results[0], results[1], results[2], results[3]), 500, 500);
@@ -570,14 +582,14 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
         }
     }
 
-    private void setNotificationSmallIcon(Context context, Bundle extras, String packageName, Resources resources, NotificationCompat.Builder mBuilder, String localIcon) {
+    private void setNotificationSmallIcon(Context context, Bundle extras, String packageName, Resources resources,
+            NotificationCompat.Builder mBuilder, String localIcon) {
         int iconId = 0;
         String icon = getString(extras, ICON);
         if (icon != null) {
             iconId = resources.getIdentifier(icon, DRAWABLE, packageName);
             Log.d(LOG_TAG, "using icon from plugin options");
-        }
-        else if (localIcon != null) {
+        } else if (localIcon != null) {
             iconId = resources.getIdentifier(localIcon, DRAWABLE, packageName);
             Log.d(LOG_TAG, "using icon from plugin options");
         }
@@ -596,8 +608,7 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
             } catch (IllegalArgumentException e) {
                 Log.e(LOG_TAG, "couldn't parse color from android options");
             }
-        }
-        else if (localIconColor != null) {
+        } else if (localIconColor != null) {
             try {
                 iconColor = Color.parseColor(localIconColor);
             } catch (IllegalArgumentException e) {
@@ -624,8 +635,8 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
     }
 
     private static String getAppName(Context context) {
-        CharSequence appName =  context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
-        return (String)appName;
+        CharSequence appName = context.getPackageManager().getApplicationLabel(context.getApplicationInfo());
+        return (String) appName;
     }
 
     @Override
@@ -642,11 +653,9 @@ public class GCMIntentService extends GCMBaseIntentService implements PushConsta
 
         try {
             retval = Integer.parseInt(getString(extras, value));
-        }
-        catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             Log.e(LOG_TAG, "Number format exception - Error parsing " + value + ": " + e.getMessage());
-        }
-        catch(Exception e) {
+        } catch (Exception e) {
             Log.e(LOG_TAG, "Number format exception - Error parsing " + value + ": " + e.getMessage());
         }
 
