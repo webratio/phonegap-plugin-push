@@ -60,7 +60,7 @@
 			<service android:name="com.adobe.phonegap.push.GCMIntentService" />
 		</config-file>
 
-		<source-file src="src/android/libs/android-support-v13.jar" target-dir="libs/" />
+		<dependency id="com.webratio.androidsupport" version="23.2.1" />
 		
 		<source-file src="src/android/com/google/android/gcm/GCMBaseIntentService.java" target-dir="src/com/google/android/gcm/" />
         <source-file src="src/android/com/google/android/gcm/GCMBroadcastReceiver.java" target-dir="src/com/google/android/gcm/" />
