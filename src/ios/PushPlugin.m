@@ -118,12 +118,9 @@
 
 - (void)hasColdStartNotification:(CDVInvokedUrlCommand*)command;
 {
-    self.callbackId = command.callbackId;
-    if(self.notificationMessage){
-       [self successWithMessage:@"true"];
-    } else {
-       [self successWithMessage:@"false"];
-    }    
+    NSString *result = self.notificationMessage ? @"true" : @"false";
+    CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+    [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
 }
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
