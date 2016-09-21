@@ -4,7 +4,7 @@
     xmlns:amazon="http://schemas.android.com/apk/lib/com.amazon.device.ads"
     xmlns:rim="http://www.blackberry.com/ns/widgets"
     id="phonegap-plugin-push"
-    version="1.3.0.5wr">
+    version="1.3.0.6wr">
 
   <name>PushPlugin</name>
 	<author>Bob Easterday</author>
@@ -60,7 +60,7 @@
 			<service android:name="com.adobe.phonegap.push.GCMIntentService" />
 		</config-file>
 
-		<dependency id="com.webratio.androidsupport" version="23.2.1" />
+		<framework src="com.android.support:support-v13:+"/>
 		
 		<source-file src="src/android/com/google/android/gcm/GCMBaseIntentService.java" target-dir="src/com/google/android/gcm/" />
         <source-file src="src/android/com/google/android/gcm/GCMBroadcastReceiver.java" target-dir="src/com/google/android/gcm/" />
