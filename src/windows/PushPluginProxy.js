@@ -71,6 +71,9 @@ module.exports = {
             onFail(ex);
         }
     },
+    hasColdStartNotification: function (onSuccess, onFail, args) {
+        onSuccess(false); /* to be done */
+    },
     unregister: function (onSuccess, onFail, args) {
         try {
             myApp.channel.removeEventListener("pushnotificationreceived", myApp.notificationEvent);
