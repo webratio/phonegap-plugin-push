@@ -1,6 +1,37 @@
 var myApp = {};
 var pushNotifications = Windows.Networking.PushNotifications;
 
+var coldstartCollected = false;
+var coldstartNotification = null;
+
+var collectColdstartNotification = function () {
+    if (coldstartCollected) {
+        return;
+    }
+    coldstartCollected = true;
+
+    // Retrieve the coldstart notification that started the application
+    var activationContext = cordova.require("cordova/platform").activationContext;
+    if (activationContext.kind === Windows.ApplicationModel.Activation.ActivationKind.toastNotification) {
+        var argsObj = null;
+        try {
+            argsObj = JSON.parse(activationContext.argument);
+        } catch (e) {
+        }
+        if ("cdvttl" in argsObj || "cdvmsg" in argsObj) {
+            var title = argsObj.cdvttl || "";
+            var message = argsObj.cdvmsg || "";
+            coldstartNotification = {
+                title: title,
+                message: message,
+                additionalData: {
+                    coldstart: true
+                }
+            }
+        }
+    }
+};
+
 var createNotificationJSON = function (e) {
     var result = { message: '' };       //Added to identify callback as notification type in the API in case where notification has no message
     var notificationPayload;
@@ -72,7 +103,8 @@ module.exports = {
         }
     },
     hasColdStartNotification: function (onSuccess, onFail, args) {
-        onSuccess(false); /* to be done */
+        collectColdstartNotification();
+        onSuccess(coldstartNotification != null);
     },
     unregister: function (onSuccess, onFail, args) {
         try {
