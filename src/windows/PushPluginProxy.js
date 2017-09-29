@@ -1,6 +1,10 @@
 var myApp = {};
 var pushNotifications = Windows.Networking.PushNotifications;
 
+var inBackground = true;
+Windows.UI.WebUI.WebUIApplication.addEventListener("enteredbackground", function () { inBackground = true });
+Windows.UI.WebUI.WebUIApplication.addEventListener("leavingbackground", function () { inBackground = false });
+
 var coldstartCollected = false;
 var coldstartNotification = null;
 
@@ -74,6 +78,7 @@ var createNotificationJSON = function (e) {
     }
 
     result.additionalData = {};
+    result.additionalData.foreground = !inBackground;
     result.additionalData.pushNotificationReceivedEventArgs = e;
     return result;
 }
