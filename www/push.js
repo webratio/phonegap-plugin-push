@@ -158,6 +158,14 @@ PushNotification.prototype.emit = function() {
     return true;
 };
 
+/**
+ * Special messages used on errors received by on('error') to indicate special error conditions.
+ */
+var ErrorCode = {
+    GENERAL: "0",
+    NOTALLOWED: "1"
+};
+
 /*!
  * Push Notification Plugin.
  */
@@ -176,10 +184,12 @@ module.exports = {
     init: function(options) {
         return new PushNotification(options);
     },
-    
+
     hasColdStartNotification: function(successCallback, errorCallbacl){
         return PushNotification.hasColdStartNotification(successCallback, errorCallbacl);
     },
+
+    ErrorCode: ErrorCode,
 
     /**
      * PushNotification Object.
