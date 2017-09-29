@@ -77,6 +77,8 @@ Parameter | Description
 `options.ios.badge` | `Boolean`\|`String` Optional. If `true`\|`"true"` the device sets the badge number on receipt of notification. Default is `false`\|`"false"`.
 `options.ios.sound` | `Boolean`\|`String` Optional. If `true`\|`"true"` the device plays a sound on receipt of notification. Default is `false`\|`"false"`.
 `options.windows` | `JSON Object` Windows specific initialization options.
+`options.windows.silentForeground` | `Boolean` Optional. If `true` foreground notifications are not shown by the OS, but are still reported with an event. This similar to iOS/Android behavior. Default is `false`.
+
 
 #### Returns
 

@@ -105,9 +105,13 @@ var parseLaunchArgs = function (argsString) {
 
 module.exports = {
     init: function (onSuccess, onFail, args) {
+        var options = (args[0] || {}).windows || {};
 
         var onNotificationReceived = function (e) {
             var result = createNotificationJSON(e);
+            if (options.silentForeground && result.additionalData.foreground) {
+                e.cancel = true;
+            }
             onSuccess(result, { keepCallback: true });
         }
 
