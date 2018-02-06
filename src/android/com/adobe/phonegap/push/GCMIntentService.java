@@ -1,5 +1,19 @@
 package com.adobe.phonegap.push;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -21,6 +35,8 @@ import android.graphics.Paint;
 import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.StrictMode;
+import android.provider.Settings.Secure;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.WearableExtender;
 import android.support.v4.app.RemoteInput;
@@ -28,6 +44,7 @@ import android.text.Html;
 import android.text.Spanned;
 import android.util.Log;
 
+import com.google.android.gcm.GCMBaseIntentService;
 import com.google.android.gms.gcm.GcmListenerService;
 
 import org.json.JSONArray;
@@ -60,6 +77,194 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             messageList.clear();
         }else{
             messageList.add(message);
+        }
+    }
+
+    public GCMIntentService() {
+        super("GCMIntentService");
+    }
+
+    @Override
+    public void onRegistered(Context context, String regId) {
+        Log.v(TAG, "onRegistered: " + regId);
+        if (PushPlugin.isActive()) {
+            try {
+                JSONObject json = new JSONObject().put(REGISTRATION_ID, regId);
+                Log.v(TAG, "onRegistered: " + json.toString());
+                PushPlugin.sendEvent(json);
+            } catch (JSONException e) {
+                // No message to the user is sent, JSON failed
+                Log.e(TAG, "onRegistered: JSON exception");
+            }
+        } else {
+            try {
+                String baseUrl = getBackendUrl(context);
+                String packageId = getAccountManagerPackageId(context);
+                Log.d(TAG, "Backend baseUrl=" + baseUrl);
+                Log.d(TAG, "AccountManager packageId=" + packageId);
+                if (baseUrl == null || packageId == null) {
+                    Log.d(TAG, "Unable to perform backend login due to missing backend URL");
+                    return;
+                }
+
+                /* retrieves current username and password */
+                Log.d(TAG, "Retrieving login info");
+                Context pkgContext = context.getApplicationContext().createPackageContext(packageId, 0);
+                SharedPreferences settings = pkgContext.getSharedPreferences("LoginPrefs", 0);
+                if (settings == null) {
+                    Log.d(TAG, "Unable to perform backend login due to missing login preferences");
+                    return;
+                }
+                String username = settings.getString("__USERNAME__", null);
+                String password = settings.getString("__PASSWORD__", null);
+                if (username == null || password == null) {
+                    Log.d(TAG, "Unable to perform backend login due to missing username or password");
+                    return;
+                }
+                String deviceId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+                BackendLoginRunnable runnable = new BackendLoginRunnable(username, password, baseUrl, regId, deviceId);
+                new Thread(runnable).start();
+            } catch (Exception e) {
+                Log.e(TAG, "An error corred performing silent login", e);
+            }
+        }
+    }
+
+    private static class BackendLoginRunnable implements Runnable {
+
+        private static final int MAX_RETRY = 10;
+
+        private final String username;
+        private final String password;
+        private final String baseUrl;
+        private final String registrationId;
+        private final String deviceId;
+
+        BackendLoginRunnable(String username, String password, String baseUrl, String registrationId, String deviceId) {
+            super();
+            this.username = username;
+            this.password = password;
+            this.baseUrl = baseUrl;
+            this.registrationId = registrationId;
+            this.deviceId = deviceId;
+        }
+
+        @Override
+        public void run() {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
+            // Retries many time with increasing time lapse in order to grant backend availability.
+            // The backend could be accessible only through the WIFI which can takes several time to be available, respect on the GSM
+            // network which is ready on startup and which allows the GCM registration but not the backend access.
+
+            /* prepares the login request body */
+            JSONObject requestJson = null;
+            try {
+                requestJson = new JSONObject();
+                requestJson.put("username", username);
+                requestJson.put("password", password);
+                JSONObject device = new JSONObject();
+                device.put("deviceId", deviceId);
+                device.put("devicePlatform", "Android");
+                device.put("notificationDeviceId", registrationId);
+                requestJson.put("device", device);
+            } catch (Throwable t) {
+                Log.e(TAG, "Unable to prepare the login request", t);
+                return;
+            }
+
+            /* performs the login (retrying it if necessary) */
+            for (int i = 1; i <= MAX_RETRY; i++) {
+                try {
+                    Log.d(TAG, "Performing backend login for '" + username + "' (retry " + i + ")");
+                    OutputStreamWriter requestWriter = null;
+                    BufferedReader responseReader = null;
+                    try {
+                        URL url = new URL(baseUrl + "/users/login");
+                        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                        conn.setConnectTimeout(4000);
+                        conn.setReadTimeout(4000);
+                        conn.setDoOutput(true);
+                        conn.setDoInput(true);
+                        conn.setRequestProperty("Accept", "application/json");
+                        conn.setRequestProperty("content-type", "application/json");
+                        requestWriter = new OutputStreamWriter(conn.getOutputStream());
+                        requestWriter.write(requestJson.toString());
+                        requestWriter.flush();
+                        final int code = conn.getResponseCode();
+                        if (200 == code) {
+                            return;
+                        }
+
+                        /* reads the response */
+                        responseReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = responseReader.readLine()) != null) {
+                            response.append("\n").append(line);
+                        }
+                        Log.e(TAG, "Unable to perform backend login (resultCode:" + code + ")" + response.toString());
+                    } finally {
+                        if (requestWriter != null) {
+                            try {
+                                requestWriter.close();
+                            } catch (Throwable t) {
+                                // ignores exceptions
+                            }
+                        }
+                        if (responseReader != null) {
+                            try {
+                                responseReader.close();
+                            } catch (Throwable t) {
+                                // ignores exceptions
+                            }
+                        }
+                    }
+                } catch (Throwable t) {
+                    // ignores exceptions
+                }
+                try {
+                    Thread.sleep(i * 2000L);
+                } catch (Throwable t2) {
+                    // ignores exceptions
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onUnregistered(Context context, String regId) {
+        Log.d(LOG_TAG, "onUnregistered - regId: " + regId);
+    }
+
+    @Override
+    protected void onMessage(Context context, Intent intent) {
+        Log.d(LOG_TAG, "onMessage - context: " + context);
+
+        // Extract the payload from the message
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+
+            SharedPreferences prefs = context.getSharedPreferences(PushPlugin.COM_ADOBE_PHONEGAP_PUSH, Context.MODE_PRIVATE);
+            boolean forceShow = prefs.getBoolean(FORCE_SHOW, false);
+
+            // if we are in the foreground and forceShow is `false` only send data
+            if (!forceShow && PushPlugin.isInForeground()) {
+                extras.putBoolean(FOREGROUND, true);
+                PushPlugin.sendExtras(extras);
+            }
+            // if we are in the foreground and forceShow is `true`, force show the notification if the data has at least a message or
+            // title
+            else if (forceShow && PushPlugin.isInForeground()) {
+                extras.putBoolean(FOREGROUND, true);
+
+                showNotificationIfPossible(context, extras);
+            }
+            // if we are not in the foreground always send notification if the data has at least a message or title
+            else {
+                extras.putBoolean(FOREGROUND, false);
+
+                showNotificationIfPossible(context, extras);
+            }
         }
     }
 
@@ -662,6 +867,30 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         }
     }
 
+    private String getString(Bundle extras, String key) {
+        String message = extras.getString(key);
+        if (message == null) {
+            message = extras.getString(GCM_NOTIFICATION + "." + key);
+        }
+        return message;
+    }
+
+    private String getString(Bundle extras, String key, String defaultString) {
+        String message = extras.getString(key);
+        if (message == null) {
+            message = extras.getString(GCM_NOTIFICATION + "." + key, defaultString);
+        }
+        return message;
+    }
+
+    private String getMessageText(Bundle extras) {
+        String message = getString(extras, MESSAGE);
+        if (message == null) {
+            message = getString(extras, BODY);
+        }
+        return message;
+    }
+
     private void setNotificationSound(Context context, Bundle extras, NotificationCompat.Builder mBuilder) {
         String soundname = extras.getString(SOUNDNAME);
         if (soundname == null) {
@@ -870,5 +1099,63 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
         String savedSenderID = sharedPref.getString(SENDER_ID, "");
 
         return from.equals(savedSenderID) || from.startsWith("/topics/");
+    }
+
+    private String getBackendUrl(Context context) {
+        try {
+            JSONObject descr = readFromfile("www/services/_backend.json", context);
+            return descr.getString("baseUrl");
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to retrieve the backend base URL", e);
+        }
+        return null;
+    }
+
+    private String getAccountManagerPackageId(Context context) {
+        try {
+            JSONObject descr = readFromfile("www/services/_security.json", context);
+            return descr.getJSONObject("accountManager").getString("packageName");
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to retrieve the account-manager package-id", e);
+        }
+        return null;
+    }
+
+    public static JSONObject readFromfile(String fileName, Context context) throws Exception {
+        InputStream inputStream = null;
+        InputStreamReader streamReader = null;
+        BufferedReader reader = null;
+        try {
+            inputStream = context.getResources().getAssets().open(fileName);
+            streamReader = new InputStreamReader(inputStream);
+            reader = new BufferedReader(streamReader);
+            String line = "";
+            StringBuilder sb = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            return new JSONObject(sb.toString());
+        } catch (Exception e) {
+            throw new Exception("Unable to read asset resource " + fileName, e);
+        } finally {
+            if (streamReader != null) {
+                try {
+                    streamReader.close();
+                } catch (Throwable t) {
+                }
+            }
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (Throwable t) {
+                }
+            }
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Throwable t) {
+                }
+            }
+        }
     }
 }
