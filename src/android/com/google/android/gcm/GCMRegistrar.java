@@ -213,7 +213,7 @@ public final class GCMRegistrar {
         internalRegister(context, senderIds);
     }
 
-    static void internalRegister(Context context, String... senderIds) {
+    public static void internalRegister(Context context, String... senderIds) {
         clearRegistrationId(context);
         String flatSenderIds = getFlatSenderIds(senderIds);
         Log.v(TAG, "Registering app " + context.getPackageName() + " of senders " + flatSenderIds);
@@ -235,7 +235,7 @@ public final class GCMRegistrar {
         internalUnregister(context);
     }
 
-    static void internalUnregister(Context context) {
+    public static void internalUnregister(Context context) {
         Log.v(TAG, "Unregistering app " + context.getPackageName());
         Intent intent = new Intent(GCMConstants.INTENT_TO_GCM_UNREGISTRATION);
         intent.setPackage(GSF_PACKAGE);
@@ -269,7 +269,7 @@ public final class GCMRegistrar {
         }
     }
 
-    static synchronized void cancelAppPendingIntent() {
+    public static synchronized void cancelAppPendingIntent() {
         if (sAppPendingIntent != null) {
             sAppPendingIntent.cancel();
             sAppPendingIntent = null;
@@ -287,7 +287,7 @@ public final class GCMRegistrar {
     /**
      * Lazy initializes the {@link GCMBroadcastReceiver} instance.
      */
-    static synchronized void setRetryBroadcastReceiver(Context context) {
+    public static synchronized void setRetryBroadcastReceiver(Context context) {
         if (sRetryReceiver == null) {
             if (sRetryReceiverClassName == null) {
                 // should never happen
@@ -369,7 +369,7 @@ public final class GCMRegistrar {
      *            application's context.
      * @return old registration id.
      */
-    static String clearRegistrationId(Context context) {
+    public static String clearRegistrationId(Context context) {
         return setRegistrationId(context, "");
     }
 
@@ -381,7 +381,7 @@ public final class GCMRegistrar {
      * @param regId
      *            registration id
      */
-    static String setRegistrationId(Context context, String regId) {
+    public static String setRegistrationId(Context context, String regId) {
         final SharedPreferences prefs = getGCMPreferences(context);
         String oldRegistrationId = prefs.getString(PROPERTY_REG_ID, "");
         int appVersion = getAppVersion(context);
@@ -474,7 +474,7 @@ public final class GCMRegistrar {
      * @param context
      *            application's context.
      */
-    static void resetBackoff(Context context) {
+    public static void resetBackoff(Context context) {
         Log.d(TAG, "Resetting backoff for " + context.getPackageName());
         setBackoff(context, DEFAULT_BACKOFF_MS);
     }
@@ -486,7 +486,7 @@ public final class GCMRegistrar {
      *            application's context.
      * @return current backoff counter, in milliseconds.
      */
-    static int getBackoff(Context context) {
+    public static int getBackoff(Context context) {
         return getGCMPreferences(context).getInt(BACKOFF_MS, DEFAULT_BACKOFF_MS);
     }
 
@@ -500,7 +500,7 @@ public final class GCMRegistrar {
      * @param backoff
      *            new backoff counter, in milliseconds.
      */
-    static void setBackoff(Context context, int backoff) {
+    public static void setBackoff(Context context, int backoff) {
         SharedPreferences prefs = getGCMPreferences(context);
         Editor editor = prefs.edit();
         editor.putInt(BACKOFF_MS, backoff);

@@ -26,11 +26,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.adobe.phonegap.push.RegistrationIntentService;
+import com.adobe.phonegap.push.GCMIntentService;
+
 /**
- * {@link BroadcastReceiver} that receives GCM messages and delivers them to an application-specific {@link GCMBaseIntentService}
+ * {@link BroadcastReceiver} that receives GCM messages and delivers them to an application-specific {@link GCMIntentService}
  * subclass.
  * <p>
- * By default, the {@link GCMBaseIntentService} class belongs to the application main package and is named
+ * By default, the {@link GCMIntentService} class belongs to the application main package and is named
  * {@link GCMConstants#DEFAULT_INTENT_SERVICE_CLASS_NAME}. To use a new class, the {@link #getGCMIntentServiceClassName(Context)} must
  * be overridden.
  */
@@ -60,7 +63,7 @@ public class GCMBroadcastReceiver extends BroadcastReceiver {
             String className = getGCMIntentServiceClassName(context);
             Log.v(TAG, "GCM IntentService class: " + className);
             // Delegates to the application-specific intent service.
-            GCMBaseIntentService.runIntentInService(context, intent, className);
+            RegistrationIntentService.runIntentInService(context, intent, className);
         }
         setResult(Activity.RESULT_OK, null, null);
     }
