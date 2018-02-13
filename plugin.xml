@@ -72,7 +72,6 @@
     <framework src="com.android.support:support-v13:23+"/>
     <framework src="com.google.android.gms:play-services-gcm:11+"/>
     <framework src="me.leolin:ShortcutBadger:1.1.14@aar"/>
-    <source-file src="src/android/com/google/android/gcm/GCMBaseIntentService.java" target-dir="src/com/google/android/gcm/"/>
     <source-file src="src/android/com/google/android/gcm/GCMBroadcastReceiver.java" target-dir="src/com/google/android/gcm/"/>
     <source-file src="src/android/com/google/android/gcm/GCMConstants.java" target-dir="src/com/google/android/gcm/"/>
     <source-file src="src/android/com/google/android/gcm/GCMRegistrar.java" target-dir="src/com/google/android/gcm/"/> 
