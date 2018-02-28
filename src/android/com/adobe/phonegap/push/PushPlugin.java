@@ -53,7 +53,7 @@ public class PushPlugin extends CordovaPlugin implements PushConstants {
         
         if (HAS_COLD_START_NOTIFICATION.equals(action)) {
             Log.v(LOG_TAG, "checking coldstart notification presence (" + gCachedExtras + ")");
-            callbackContext.success((gCachedExtras != null) ? "true" : "false");
+            callbackContext.success((!gCachedExtras.isEmpty()) ? "true" : "false");
         } else if (INITIALIZE.equals(action)) {
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {
