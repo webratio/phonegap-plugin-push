@@ -69,7 +69,7 @@
       <service android:name="com.adobe.phonegap.push.RegistrationIntentService" android:exported="false"/>
     </config-file>
     <framework src="push.gradle" custom="true" type="gradleReference"/>
-    <framework src="com.android.support:support-v13:23+"/>
+    <framework src="com.android.support:support-v13:26.+"/>
     <framework src="com.google.android.gms:play-services-gcm:11+"/>
     <framework src="me.leolin:ShortcutBadger:1.1.14@aar"/>
     <source-file src="src/android/com/google/android/gcm/GCMBroadcastReceiver.java" target-dir="src/com/google/android/gcm/"/>
