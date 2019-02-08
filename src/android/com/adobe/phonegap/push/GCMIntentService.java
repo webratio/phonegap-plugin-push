@@ -49,7 +49,8 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
 
     private static final String LOG_TAG = "Push_GCMIntentService";
     private static HashMap<Integer, ArrayList<String>> messageMap = new HashMap<Integer, ArrayList<String>>();
-
+    private static int notificationId = 0;
+    
     public void setNotification(int notId, String message){
         ArrayList<String> messageList = messageMap.get(notId);
         if(messageList == null) {
@@ -886,6 +887,12 @@ public class GCMIntentService extends GcmListenerService implements PushConstant
             Log.e(LOG_TAG, "Number format exception - Error parsing " + value + ": " + e.getMessage());
         }
 
+        if (retval == 0){
+            if (notificationId == Integer.MAX_VALUE){
+                notificationId = 0;
+            }
+            retval = ++notificationId;
+        }
         return retval;
     }
 
