@@ -4,7 +4,7 @@
 		xmlns:amazon="http://schemas.android.com/apk/lib/com.amazon.device.ads" 
 		xmlns:rim="http://www.blackberry.com/ns/widgets" 
 		id="phonegap-plugin-push" 
-		version="1.10.5.3wr">
+		version="1.11.1-1wr">
   <name>PushPlugin</name>
   <description>
 		This plugin allows your application to receive push notifications on Android, iOS and Windows devices.
@@ -47,6 +47,7 @@
     <config-file target="AndroidManifest.xml" parent="/manifest/application">
       <activity android:name="com.adobe.phonegap.push.PushHandlerActivity" android:exported="true" android:permission="${applicationId}.permission.PushHandlerActivity"/>
       <receiver android:name="com.adobe.phonegap.push.BackgroundActionButtonHandler"/>
+      <receiver android:name="com.adobe.phonegap.push.PushDismissedHandler"/>
       <receiver android:name="com.google.android.gms.gcm.GcmReceiver" android:exported="true" android:permission="com.google.android.c2dm.permission.SEND">
         <intent-filter>
           <action android:name="com.google.android.c2dm.intent.RECEIVE" />
@@ -70,7 +71,7 @@
     </config-file>
     <framework src="push.gradle" custom="true" type="gradleReference"/>
     <framework src="com.android.support:support-v13:27+"/>
-    <framework src="com.google.android.gms:play-services-gcm:11+"/>
+    <framework src="com.google.android.gms:play-services-gcm:15+"/>
     <framework src="me.leolin:ShortcutBadger:1.1.14@aar"/>
     <source-file src="src/android/com/google/android/gcm/GCMBroadcastReceiver.java" target-dir="src/com/google/android/gcm/"/>
     <source-file src="src/android/com/google/android/gcm/GCMConstants.java" target-dir="src/com/google/android/gcm/"/>
@@ -83,6 +84,7 @@
     <source-file src="src/android/com/adobe/phonegap/push/RegistrationIntentService.java" target-dir="src/com/adobe/phonegap/push/"/>
     <source-file src="src/android/com/adobe/phonegap/push/PermissionUtils.java" target-dir="src/com/adobe/phonegap/push/"/>
     <source-file src="src/android/com/adobe/phonegap/push/BackgroundActionButtonHandler.java" target-dir="src/com/adobe/phonegap/push/"/>
+    <source-file src="src/android/com/adobe/phonegap/push/PushDismissedHandler.java" target-dir="src/com/adobe/phonegap/push/"/>
   </platform>
   <platform name="browser">
     <js-module src="www/browser/push.js" name="BrowserPush">
