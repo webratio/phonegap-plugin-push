@@ -31,7 +31,7 @@ var PushNotification = function(options) {
 
     // subscription options
     var subOptions = {userVisibleOnly: true};
-    if (this.options.browser.applicationServerKey) {
+    if (this.options.browser && this.options.browser.applicationServerKey) {
         subOptions.applicationServerKey = urlBase64ToUint8Array(this.options.browser.applicationServerKey);
     }
 
@@ -367,7 +367,10 @@ module.exports = {
     },
 
     hasPermission: function(successCallback, errorCallback) {
-        successCallback(true);
+        const granted = Notification && Notification.permission === 'granted';
+        successCallback({
+            isEnabled: granted
+        });
     },
 
     unregister: function(successCallback, errorCallback, options) {

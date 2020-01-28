@@ -3,4 +3,5 @@
 .DS_Store
 /node_modules/
 npm-debug.log
+.tern-project
 package-lock.json

@@ -55,7 +55,7 @@ declare namespace PhonegapPluginPush {
 		 * @param topics
 		 */
 		unregister(successHandler: () => any, errorHandler?: () => any, topics?: string[]): void
-        
+
 		/**
 		 * The subscribe method is used when the application wants to subscribe a new topic to receive push notifications.
 		 * @param topic Topic to subscribe to.
@@ -65,14 +65,14 @@ declare namespace PhonegapPluginPush {
 		subscribe(topic: string, successHandler: () => any, errorHandler: () => any): void;
 
 		/**
-		 * The unsubscribe method is used when the application no longer wants to receive push notifications 
+		 * The unsubscribe method is used when the application no longer wants to receive push notifications
 		 * from a specific topic but continue to receive other push messages.
 		 * @param topic Topic to unsubscribe from.
 		 * @param successHandler Is called when the api successfully unregisters.
 		 * @param errorHandler Is called when the api encounters an error while unregistering.
 		 */
 		unsubscribe(topic: string, successHandler: () => any, errorHandler: () => any): void;
-        
+
 		/*TODO according to js source code, "errorHandler" is optional, but is "count" also optional? I can't read objetive-C code (can anyone at all? I wonder...)*/
 		/**
 		 * Set the badge count visible when the app is not running
@@ -85,7 +85,7 @@ declare namespace PhonegapPluginPush {
 		 * @param count
 		 */
 		setApplicationIconBadgeNumber(successHandler: () => any, errorHandler: () => any, count: number): void
-        
+
 		/**
 		 * Get the current badge count visible when the app is not running
 		 * successHandler gets called with an integer which is the current badge count
@@ -103,6 +103,13 @@ declare namespace PhonegapPluginPush {
 		 * @param id
 		 */
 		finish(successHandler?: () => any, errorHandler?: () => any, id?: string): void
+
+		/**
+		 * Tells the OS to clear all notifications from the Notification Center
+		 * @param successHandler Is called when the api successfully clears the notifications.
+		 * @param errorHandler Is called when the api encounters an error when attempting to clears the notifications.
+		 */
+		clearAllNotifications(successHandler: () => any, errorHandler: () => any): void
 	}
 
 	/**
@@ -113,10 +120,6 @@ declare namespace PhonegapPluginPush {
 		 * Android specific initialization options.
 		 */
 		android?: {
-			/**
-			 * Maps to the project number in the Google Developer Console.
-			 */
-			senderID: string
 			/**
 			 * The name of a drawable resource to use as the small-icon. The name should not include the extension.
 			 */
@@ -135,6 +138,10 @@ declare namespace PhonegapPluginPush {
 			 */
 			vibrate?: boolean
 			/**
+			 * If true the icon badge will be cleared on init and before push messages are processed. Default is false.
+			 */
+			clearBadge?: boolean
+			/**
 			 * If true the app clears all pending notifications when it is closed. Default is true.
 			 */
 			clearNotifications?: boolean
@@ -146,12 +153,40 @@ declare namespace PhonegapPluginPush {
 			 * If the array contains one or more strings each string will be used to subscribe to a GcmPubSub topic.
 			 */
 			topics?: string[]
+			/**
+			 * The key to search for text of notification. Default is 'message'.
+			 */
+			messageKey?: string
+			/**
+			 * The key to search for title of notification. Default is 'title'.
+			 */
+			titleKey?: string
+		}
+
+		/**
+		 * Browser specific initialization options.
+		 */
+		browser?: {
+			/**
+			 * URL for the push server you want to use. Default is 'http://push.api.phonegap.com/v1/push'.
+			 */
+			pushServiceURL?: string
+			/**
+			 * Your GCM API key if you are using VAPID keys.
+			 */
+			applicationServerKey?: string
 		}
 
 		/**
 		 * iOS specific initialization options.
 		 */
 		ios?: {
+			/**
+			 * If true|"true" the device will be set up to receive VoIP Push notifications and the other options will be ignored
+			 * since VoIP notifications are silent notifications that should be handled in the "notification" event.
+			 * Default is false|"false".
+			 */
+			voip?: boolean | string
 			/**
 			 * If true|"true" the device sets the badge number on receipt of notification.
 			 * Default is false|"false".
@@ -177,7 +212,7 @@ declare namespace PhonegapPluginPush {
 			 */
 			alert?: boolean | string
 			/**
-			 * If true|"true" the badge will be cleared on app startup. Default is false|"false".
+			 * If true|"true" the badge will be cleared on app startup. Defaults to false|"false".
 			 */
 			clearBadge?: boolean | string
 			/**
@@ -186,15 +221,11 @@ declare namespace PhonegapPluginPush {
 			 */
 			categories?: CategoryArray
 			/**
-			 * Maps to the project number in the Google Developer Console. Setting this uses GCM for notifications instead of native
-			 */
-			senderID?: string
-			/**
 			 * Whether to use prod or sandbox GCM setting. Defaults to false.
 			 */
-			gcmSandbox?: boolean
+			fcmSandbox?: boolean
 			/**
-			 * If the array contains one or more strings each string will be used to subscribe to a GcmPubSub topic. Note: only usable in conjunction with senderID
+			 * If the array contains one or more strings each string will be used to subscribe to a FcmPubSub topic. Defaults to [].
 			 */
 			topics?: string[]
 		}

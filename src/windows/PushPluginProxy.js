@@ -134,7 +134,7 @@ module.exports = {
                     }
 
                     var context = cordova.require('cordova/platform').activationContext;
-                    var launchArgs = context ? context.args : null;
+                    var launchArgs = context ? (context.argument || context.args) : null;
                     if (launchArgs) {         //If present, app launched through push notification
                         var result = { message: '' };       //Added to identify callback as notification type in the API
                         result.launchArgs = launchArgs;
@@ -160,6 +160,17 @@ module.exports = {
         } catch(ex) {
             onFail(ex);
         }
+    },
+    hasPermission: function (onSuccess) {
+        var notifier = Windows.UI.Notifications.ToastNotificationManager.createToastNotifier();
+
+        onSuccess({ isEnabled: !notifier.setting });
+    },
+    subscribe: function() {
+        console.log("Subscribe is unsupported");
+    },
+    unsubscribe: function() {
+        console.log("Subscribe is unsupported");
     }
 };
 require("cordova/exec/proxy").add("PushNotification", module.exports);
