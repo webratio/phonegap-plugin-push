@@ -71,7 +71,6 @@ function () {
    * Unregister from push notifications
    */
 
-
   _createClass(PushNotification, [{
     key: "unregister",
     value: function unregister(successCallback) {
@@ -362,6 +361,13 @@ module.exports = {
   },
   hasPermission: function hasPermission(successCallback, errorCallback) {
     exec(successCallback, errorCallback, 'PushNotification', 'hasPermission', []);
+  },
+  hasColdStartNotification: function(successCallback, errorCallback){
+  	exec(function(result) {
+			successCallback && successCallback(result === true || result === "true");
+		}, function(msg) {
+			errorCallback && errorCallback(new Error(msg));
+		}, "PushNotification", "hasColdStartNotification", []);
   },
   createChannel: function createChannel(successCallback, errorCallback, channel) {
     exec(successCallback, errorCallback, 'PushNotification', 'createChannel', [channel]);
