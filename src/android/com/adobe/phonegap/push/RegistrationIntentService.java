@@ -174,8 +174,14 @@ public class RegistrationIntentService extends IntentService implements PushCons
                 int nextAttempt = backoffTimeMs / 2 + sRandom.nextInt(backoffTimeMs);
                 Log.d(LOG_TAG, "Scheduling registration retry, backoff = " + nextAttempt + " (" + backoffTimeMs + ")");
                 Intent retryIntent = new Intent(INTENT_FROM_GCM_LIBRARY_RETRY);
+                retryIntent.setPackage(context.getPackageName());
                 retryIntent.putExtra(EXTRA_TOKEN, TOKEN);
-                PendingIntent retryPendingIntent = PendingIntent.getBroadcast(context, 0, retryIntent, 0);
+                PendingIntent retryPendingIntent;
+                if (android.os.Build.VERSION.SDK_INT >= 23) {
+                    retryPendingIntent = PendingIntent.getBroadcast(context, 0, retryIntent, PendingIntent.FLAG_IMMUTABLE);
+                } else {
+                    retryPendingIntent = PendingIntent.getBroadcast(context, 0, retryIntent, 0);
+                }
                 AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                 am.set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + nextAttempt, retryPendingIntent);
                 // Next retry should wait longer.
