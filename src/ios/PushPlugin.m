@@ -355,6 +355,13 @@
     return [UNNotificationAction actionWithIdentifier:identifier title:title options:options];
 }
 
+- (void)hasColdStartNotification:(CDVInvokedUrlCommand*)command;
+{
+    NSString *result = self.notificationMessage ? @"true" : @"false";
+    CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:result];
+    [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+}
+
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
     if (self.callbackId == nil) {
         NSLog(@"Unexpected call to didRegisterForRemoteNotificationsWithDeviceToken, ignoring: %@", deviceToken);
