@@ -1,5 +1,6 @@
 package com.adobe.phonegap.push;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.NotificationChannel;
@@ -7,13 +8,14 @@ import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -23,6 +25,7 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PermissionHelper;
 import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,6 +43,8 @@ import me.leolin.shortcutbadger.ShortcutBadger;
 public class PushPlugin extends CordovaPlugin implements PushConstants {
 
   public static final String LOG_TAG = "Push_Plugin";
+
+  private static final int INITIALIZE_SEC = 0;
 
   private static CallbackContext pushContext;
   private static CordovaWebView gWebView;
@@ -189,6 +194,13 @@ public class PushPlugin extends CordovaPlugin implements PushConstants {
           String token = null;
           String senderID = null;
 
+          if (Build.VERSION.SDK_INT >= 33) {
+            if (!PermissionHelper.hasPermission(PushPlugin.this, Manifest.permission.POST_NOTIFICATIONS)) {
+              Log.v(LOG_TAG, "requesting notifications permission");
+              PermissionHelper.requestPermissions(PushPlugin.this, INITIALIZE_SEC, new String[] { Manifest.permission.POST_NOTIFICATIONS });
+            }
+          }
+
           try {
             jo = data.getJSONObject(0).getJSONObject(ANDROID);
 
@@ -321,9 +333,11 @@ public class PushPlugin extends CordovaPlugin implements PushConstants {
         public void run() {
           JSONObject jo = new JSONObject();
           try {
-            Log.d(LOG_TAG,
-                "has permission: " + NotificationManagerCompat.from(getApplicationContext()).areNotificationsEnabled());
-            jo.put("isEnabled", NotificationManagerCompat.from(getApplicationContext()).areNotificationsEnabled());
+            boolean isEnabled = Build.VERSION.SDK_INT >= 33
+                    ? PermissionHelper.hasPermission(PushPlugin.this, Manifest.permission.POST_NOTIFICATIONS)
+                    : NotificationManagerCompat.from(getApplicationContext()).areNotificationsEnabled();
+            Log.d(LOG_TAG,"has permission: " + isEnabled);
+            jo.put("isEnabled", isEnabled);
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, jo);
             pluginResult.setKeepCallback(true);
             callbackContext.sendPluginResult(pluginResult);
@@ -507,6 +521,25 @@ public class PushPlugin extends CordovaPlugin implements PushConstants {
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
     super.initialize(cordova, webView);
     gForeground = true;
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+    boolean denied = false;
+    for(int r:grantResults)    {
+      if (r == PackageManager.PERMISSION_DENIED) {
+        denied = true;
+        break;
+      }
+    }
+    switch(requestCode)
+    {
+      case INITIALIZE_SEC:
+        Log.v(LOG_TAG, "notifications permission " + (denied ? "DENIED" : "GRANTED"));
+        break;
+      default:
+        Log.w(LOG_TAG, "invalid request code: " + requestCode);
+    }
   }
 
   @Override
